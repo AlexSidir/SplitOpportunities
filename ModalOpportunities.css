@@ -1,0 +1,15 @@
+.THIS.card{
+    max-height: 90px;
+}
+
+.THIS .highlightOnEmpty { 
+    box-shadow: 5px 5px 5px red;
+}
+
+.THIS .removeHighlight { 
+    box-shadow: 5px 5px 5px white;
+}
+.THIS.slds-spinner_container {  
+    z-index: 10000;
+    position: fixed;   
+}

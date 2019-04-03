@@ -1,0 +1,217 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,force:hasRecordId" access="global"
+    controller="createSubOpportunities">
+
+    <aura:attribute name="isOpen" type="boolean" default="false" />
+    <aura:attribute name="isRelatedOpen" type="boolean" default="false" />
+    <aura:attribute name="tabId" type="string" default="1" />
+    <aura:attribute name="splits" type="string" default="1" />
+    <aura:attribute name="displayConfigTab" type="String" required="true" default="false" />
+    <aura:attribute name="isFinished" type="Boolean" default="false" />
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute name="alreadySplit" type="Boolean" default="false" />
+    <aura:attribute name="controller" type="createSubOpportunities" />
+    <aura:attribute name="opportunities" type="List" />
+    <aura:attribute name="sum" type="String" default="0" />
+    <aura:attribute name="divisions" type="Integer" default="" />
+    <aura:attribute name="spinner" type="boolean" default="false" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <aura:handler event="aura:waiting" action="{!c.showSpinner}" />
+    <aura:handler event="aura:doneWaiting" action="{!c.hideSpinner}" />
+
+    <lightning:card title="" class="slds-text-title card">
+        <div class="slds-m-around_xx-small">
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col slds-size_1-of-2">
+                    <div class="slds-p-around_small">
+                        <lightning:button variant="brand" label="Split Opportunity" title="Split Opportunity"
+                            onclick="{! c.openModel }" class="slds-size_full" />
+                        <aura:if isTrue="{!v.isOpen}">
+                            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+                                aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                                <div class="slds-modal__container">
+                                    <header class="slds-modal__header">
+                                        <lightning:buttonIcon iconName="utility:close" onclick="{! c.closeModel }"
+                                            alternativeText="close" variant="bare-inverse" class="slds-modal__close" />
+                                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Divide
+                                            Opportunity
+                                            to
+                                            Sub-Opportunities</h2>
+                                    </header>
+                                    <aura:if isTrue="{!v.alreadySplit}">
+                                        <!--If Opportunity is already split then we don't allow splitting its children-->
+                                        <div class="slds-modal__content slds-p-around_medium">
+                                            <b>Opportunity cannot be split!</b>
+                                        </div>
+                                        <footer class="slds-modal__footer">
+                                            <lightning:button variant="brand" label="Okay" title="Cancel"
+                                                onclick="{! c.closeModel }" />
+                                        </footer>
+                                        <aura:set attribute="else">
+                                            <div class="slds-modal__content slds-p-around_medium"
+                                                id="modal-content-id-1">
+                                                <p>
+                                                    <b>
+                                                        <lightning:tabset aura:id="tabs" selectedTabId="{!v.tabId}">
+                                                            <lightning:tab label="Number of splits" id="1"
+                                                                onactive="{!c.tab1Active}">
+                                                                <ui:inputText aura:id="numberOfDivisionsField"
+                                                                    label="How many splits do you want?"
+                                                                    value="{!v.divisions}" />
+                                                            </lightning:tab>
+                                                            <aura:if isTrue="{!v.displayConfigTab}">
+                                                                <lightning:tab label="Configuration of splits" id="2"
+                                                                    onactive="{!c.tab2Active}">
+                                                                    <div class="slds-grid slds-wrap">
+                                                                        <aura:if isTrue="{!v.spinner}">
+                                                                            <div aura:id="spinnerId"
+                                                                                class="slds-spinner_container">
+                                                                                <div class="slds-spinner_brand  slds-spinner slds-spinner_large slds-is-relative"
+                                                                                    role="alert">
+                                                                                    <span
+                                                                                        class="slds-assistive-text">Loading</span>
+                                                                                    <div class="slds-spinner__dot-a">
+                                                                                    </div>
+                                                                                    <div class="slds-spinner__dot-b">
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </aura:if>
+                                                                        <lightning:layout multipleRows="true"
+                                                                            horizontalAlign="space">
+                                                                            {!v.body}
+                                                                        </lightning:layout>
+                                                                    </div>
+                                                                </lightning:tab>
+                                                            </aura:if>
+                                                        </lightning:tabset>
+                                                    </b>
+                                                </p>
+                                            </div>
+                                            <footer class="slds-modal__footer">
+                                                <lightning:button variant="neutral" label="Cancel" title="Cancel"
+                                                    onclick="{! c.closeModel }" />
+                                                <aura:if isTrue="{!v.isFinished}">
+                                                    <lightning:button variant="brand" label="Back" title="Back"
+                                                        onclick="{! c.previousTab }" />
+                                                    <!-- content renders the "Finish" button if true -->
+                                                    <lightning:button variant="brand" label="Finish" title="Finish"
+                                                        onclick="{! c.finish }" />
+                                                    <aura:set attribute="else">
+                                                        <!-- content renders the "Next" button if false -->
+                                                        <lightning:button variant="brand" label="Next" title="Next"
+                                                            onclick="{! c.nextTab }" />
+                                                    </aura:set>
+                                                </aura:if>
+                                            </footer>
+                                        </aura:set>
+                                    </aura:if>
+                                </div>
+                            </section>
+                            <div class="slds-backdrop slds-backdrop_open"></div>
+                        </aura:if>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-2">
+                    <div class="slds-p-around_small">
+                        <lightning:button variant="brand" label="Show Related Opportunities"
+                            title="Show Related Opportunities" class="slds-size_full"
+                            onclick="{! c.openRelatedModel }" />
+                        <aura:if isTrue="{!v.isRelatedOpen}">
+                            <div class="demo-only" style="height: 640px;">
+                                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01"
+                                    aria-modal="true" aria-describedby="modal-content-id-1"
+                                    class="slds-modal slds-fade-in-open">
+                                    <div class="slds-modal__container">
+                                        <header class="slds-modal__header">
+
+                                            <lightning:buttonIcon iconName="utility:close" variant="bare"
+                                                onclick="{! c.closeRelatedModel }" alternativeText="Close"
+                                                class="slds-modal__close" />
+
+                                            <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                                                Related Opportunities</h2>
+                                        </header>
+                                        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                                            <table
+                                                class="slds-table slds-table_bordered slds-table_striped slds-table_cell-buffer slds-table_fixed-layout">
+                                                <thead>
+                                                    <tr class="slds-text-heading_label">
+                                                        <th scope="col">
+                                                            <div class="slds-truncate" title="ID">ID</div>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <div class="slds-truncate" title="Name">Name</div>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <div class="slds-truncate" title="CloseDate">CloseDate</div>
+                                                        </th>
+                                                        <th scope="col">
+                                                            <div class="slds-truncate" title="Amount">Amount</div>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <aura:iteration items="{!v.opportunities}" var="opportunity">
+                                                        <tr>
+                                                            <th scope="row">
+                                                                <div class="slds-truncate" title="{!opportunity.Id}"
+                                                                    onclick="{!c.navigateToRecord}"
+                                                                    data-value="{!opportunity.Id}">
+                                                                    <a>{!opportunity.Id}</a></div>
+                                                            </th>
+                                                            <td>
+                                                                <div class="slds-truncate" title="{!opportunity.Name}">
+                                                                    {!opportunity.Name}</div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="slds-truncate"
+                                                                    title="{!opportunity.CloseDate}">
+                                                                    {!opportunity.CloseDate}</div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="slds-truncate"
+                                                                    title="{!opportunity.Amount}">
+                                                                    {!opportunity.Amount}</div>
+                                                            </td>
+                                                        </tr>
+                                                    </aura:iteration>
+                                                    <br />
+                                                    <br />
+                                                    <tr>
+                                                        <th scope="row">
+                                                            <div class="slds-truncate"
+                                                                title="Total amount including the current opportunity">
+                                                                Total Amount
+                                                            </div>
+                                                        </th>
+                                                        <td>
+                                                            <div class="slds-truncate" title="-"></div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate" title="-"></div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate" title="13">
+                                                                {!v.sum}</div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <footer class="slds-modal__footer">
+                                            <lightning:button variant="brand" label="Okay" title="Okay"
+                                                onclick="{! c.closeRelatedModel }" />
+                                        </footer>
+                                    </div>
+                                </section>
+                                <div class="slds-backdrop slds-backdrop_open"></div>
+                            </div>
+                        </aura:if>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </lightning:card>
+</aura:component>
